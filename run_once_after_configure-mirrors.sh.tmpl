@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# This script configures system-wide mirrors (APT and Docker)
+# It runs whenever the content of this file changes.
+
+echo "Checking and configuring system-wide mirrors..."
+
+# 1. Configure APT Tsinghua Mirror
+if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+    echo "Configuring APT Tsinghua mirror..."
+    sudo sed -i 's|http://.*.ubuntu.com/ubuntu/|https://mirrors.tuna.tsinghua.edu.cn/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources
+    sudo sed -i 's|https://.*.ubuntu.com/ubuntu/|https://mirrors.tuna.tsinghua.edu.cn/ubuntu/|g' /etc/apt/sources.list.d/ubuntu.sources
+fi
+
+# 2. Configure Docker Hub Mirrors
+echo "Configuring Docker daemon mirrors..."
+sudo mkdir -p /etc/docker
+cat << 'DOCKER_EOF' | sudo tee /etc/docker/daemon.json > /dev/null
+{
+  "registry-mirrors": [
+    "https://docker.1ms.run",
+    "https://docker.m.daocloud.io",
+    "https://docker.xuanyuan.me",
+    "https://docker.1panel.live"
+  ]
+}
+DOCKER_EOF
+
+# 3. Reload services
+echo "Reloading Docker and APT..."
+sudo systemctl daemon-reload
+sudo systemctl restart docker || true
+sudo apt update
